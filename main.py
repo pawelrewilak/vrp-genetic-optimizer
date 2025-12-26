@@ -23,6 +23,7 @@ class Graph:
                  weights: List[List[float]] = None, 
                  nodes: List[School] = None):
         
+        self.nodes_dict = {s.id: s for s in nodes} if nodes else {}
         self.depot_id = depot_id
         self.vehicle_hiring_cost = vehicle_hiring_cost
         self.max_vehicle_time = max_vehicle_time
@@ -53,7 +54,7 @@ def calculate_fitness(routes: List[List[int]], graph: Graph) -> float:
         current_time = 0.0 
         
         for next_node_id in route:
-            school = next(s for s in graph.nodes if s.id == next_node_id)
+            school = graph.nodes_dict[next_node_id]
             
             travel_time = graph.get_travel_time(current_node_id, next_node_id)
             arrival_time = current_time + travel_time
@@ -91,7 +92,7 @@ def decode_chromosome(chromosome: List[int], graph: Graph) -> List[List[int]]:
     current_node_id = graph.depot_id
     
     for school_id in chromosome:
-        school = next(s for s in graph.nodes if s.id == school_id)
+        school = graph.nodes_dict[school_id]
         dist_to = graph.get_travel_time(current_node_id, school_id)
         dist_back = graph.get_travel_time(school_id, graph.depot_id)
         
@@ -211,5 +212,51 @@ def scramble_mutate(chromosome: List[int], mutation_rate: float = 0.55) -> List[
 
     return chromosome
 
-    
+def mutator(chromosome: List[int], mode: str, mutation_rates: List[float] = [0.55, 0.55, 0.55, 0.55, 1]) -> List[int]:
+    operators = [swap_mutate, inversion_mutate, insertion_mutate, scramble_mutate]
 
+    match mode:
+        case "swap":
+            return swap_mutate(chromosome, mutation_rates[0])
+        case "inv":
+            return inversion_mutate(chromosome, mutation_rates[1])
+        case "ins":
+            return insertion_mutate(chromosome, mutation_rates[2])
+        case "scr":
+            return scramble_mutate(chromosome, mutation_rates[3])
+        case "hybrid":
+            idx = random.randint(0, 3)
+            return operators[idx](chromosome, mutation_rates[4]) # Zmiana mutation_rates[4] na [idx] pozwala na uzyskanie pełnej kontroli nad szansą wystąpienia konkretnego typu mutacji
+                                                                 # również wewnątrz trybu mieszanego, zachowując spójność parametrów zdefiniowanych dla poszczególnych operatorów.
+    
+    return chromosome
+
+def run_evolution(graph: Graph, pop_size: int = 60, generations: int = 200, mutation_mode: str = 'swap', mut_rates: List[float] = [0.55, 0.55, 0.55, 0.55, 1], selection_mode:str = 'turn'):
+    all_school_ids = [s.id for s in graph.nodes if s.id != graph.depot_id]
+    population = [random.sample(all_school_ids,len(all_school_ids)) for _ in range(pop_size)]
+
+    best_global_chromosome = None
+    best_global_fitness = float("inf")
+
+    for _ in range(generations):
+        scored_generation = score_population(population, graph)
+        scored_generation.sort(key=lambda x: x[1], reverse=True)
+
+        best_local_chromosome , best_local_fitness = scored_generation[0]
+
+        if best_local_fitness > best_global_fitness:
+            best_global_fitness = best_local_fitness
+            best_global_chromosome = best_local_chromosome
+    
+    new_population = [selection_nbest(2,scored_generation)] # Elitaryzm, 2 najlepsze zostają
+
+    while len(new_population) < pop_size:
+        if selection_mode is 'turn':
+            p1 = selection_tournament(scored_generation)
+            p2 = selection_tournament(scored_generation)
+
+            child = order_crossover(p1,p2)
+
+
+
+    
