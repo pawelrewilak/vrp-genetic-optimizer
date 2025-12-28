@@ -169,6 +169,48 @@ def order_crossover(p1: List[int], p2: List[int]) -> List[int]:
 
     return child
 
+def erx_crossover(p1: List[int], p2: List[int]) -> List[int]:
+    size = len(p1)
+    
+    adj = {node: set() for node in p1}
+    
+    def add_neighbors(parent):
+        for i in range(size):
+            prev_node = parent[i - 1]
+            next_node = parent[(i + 1) % size]
+            adj[parent[i]].add(prev_node)
+            adj[parent[i]].add(next_node)
+
+    add_neighbors(p1)
+    add_neighbors(p2)
+
+    child = []
+    current_node = random.choice([p1[0], p2[0]])
+    
+    while len(child) < size:
+        child.append(current_node)
+        
+        for neighbors in adj.values():
+            neighbors.discard(current_node)
+        
+        candidates = adj[current_node]
+        
+        if candidates:
+            min_neighbors = min(len(adj[c]) for c in candidates)
+            best_candidates = [c for c in candidates if len(adj[c]) == min_neighbors]
+            next_node = random.choice(best_candidates)
+        else:
+            remaining = [n for n in p1 if n not in child]
+            if remaining:
+                next_node = random.choice(remaining)
+            else:
+                break
+        
+        current_node = next_node
+
+    return child
+
+
 def swap_mutate(chromosome: List[int], mutation_rate: float = 0.55) -> List[int]:
 
     if random.random() > mutation_rate:
@@ -231,32 +273,82 @@ def mutator(chromosome: List[int], mode: str, mutation_rates: List[float] = [0.5
     
     return chromosome
 
-def run_evolution(graph: Graph, pop_size: int = 60, generations: int = 200, mutation_mode: str = 'swap', mut_rates: List[float] = [0.55, 0.55, 0.55, 0.55, 1], selection_mode:str = 'turn'):
+def run_evolution(graph: Graph, pop_size: int = 60, generations: int = 200, 
+                  mutation_mode: str = 'swap', 
+                  mut_rates: List[float] = [0.55, 0.55, 0.55, 0.55, 1], 
+                  cross_mode: str = 'order'):
+    
     all_school_ids = [s.id for s in graph.nodes if s.id != graph.depot_id]
-    population = [random.sample(all_school_ids,len(all_school_ids)) for _ in range(pop_size)]
+    population = [random.sample(all_school_ids, len(all_school_ids)) for _ in range(pop_size)]
 
     best_global_chromosome = None
-    best_global_fitness = float("inf")
+    best_global_fitness = -float("inf")
 
-    for _ in range(generations):
+    for gen in range(generations):
+        # 1. Ocena i sortowanie
         scored_generation = score_population(population, graph)
         scored_generation.sort(key=lambda x: x[1], reverse=True)
 
-        best_local_chromosome , best_local_fitness = scored_generation[0]
+        best_local_chromosome, best_local_fitness = scored_generation[0]
 
+        # 2. Archiwizacja najlepszego (z kopią!)
         if best_local_fitness > best_global_fitness:
             best_global_fitness = best_local_fitness
-            best_global_chromosome = best_local_chromosome
-    
-    new_population = [selection_nbest(2,scored_generation)] # Elitaryzm, 2 najlepsze zostają
+            best_global_chromosome = best_local_chromosome[:] 
+            print(f"Generacja {gen}: Rekord = {best_global_fitness:.2f}")
 
-    while len(new_population) < pop_size:
-        if selection_mode is 'turn':
+        # 3. Budowa nowej populacji
+        new_population = []
+        # Elitaryzm (2 najlepszych przechodzi bez zmian)
+        new_population.extend(selection_nbest(2, scored_generation))
+
+        while len(new_population) < pop_size:
             p1 = selection_tournament(scored_generation)
             p2 = selection_tournament(scored_generation)
 
-            child = order_crossover(p1,p2)
+            # Krzyżowanie
+            if cross_mode == 'order':
+                child = order_crossover(p1, p2)
+            else:
+                child = erx_crossover(p1, p2)
 
-
-
+            # Mutacja
+            child = mutator(child, mutation_mode, mut_rates)
+            
+            new_population.append(child)
+        
+        population = new_population
     
+    return best_global_chromosome, best_global_fitness
+
+
+schools = [
+    # GRUPA A: Muszą być sprzątnięte rano (np. między 8:00 a 10:00)
+    School(1, 1200, 50, 90, 0, 120), 
+    School(2, 1200, 50, 90, 0, 120), # KONFLIKT: Jedna ekipa nie zrobi dwóch szkół po 90 min w 120 min!
+
+    # GRUPA B: Duże szkoły, które zajmują dużo czasu
+    School(3, 1000, 50, 150, 120, 360),
+    School(4, 1000, 50, 150, 120, 360),
+    
+    # GRUPA C: Szkoła popołudniowa
+    School(5, 800, 50, 100, 300, 480),
+    School(6, 800, 50, 100, 300, 480)
+]
+
+# Zwiększamy nieco odległości (dojazdy), by trudniej było "upchnąć" zadania
+size = len(schools) + 1
+weights = [[30.0 for _ in range(size)] for _ in range(size)]
+for i in range(size): weights[i][i] = 0.0
+
+# Inicjalizacja grafu (z kosztem ekipy 1100)
+g = Graph(depot_id=0, nodes=schools, weights=weights, vehicle_hiring_cost=1100.0, max_vehicle_time=480.0)
+
+
+# 4. START!
+best_path, best_val = run_evolution(g, pop_size=40, generations=50, mutation_mode='hybrid')
+
+print("\n--- WYNIK KOŃCOWY ---")
+print(f"Najlepszy zysk: {best_val}")
+print(f"Trasa: {best_path}")
+print(f"Podział na pojazdy: {decode_chromosome(best_path, g)}")
