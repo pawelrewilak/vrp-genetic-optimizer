@@ -17,7 +17,7 @@ class School:
 
 class Graph:
     def __init__(self, depot_id: int = 0, 
-                 vehicle_hiring_cost: float = 1100.0, 
+                 vehicle_hiring_cost: float = 1200, 
                  max_vehicle_time: float = 480.0,    
                  penalty_factor: float = 1000.0,     
                  weights: List[List[float]] = None, 
@@ -41,8 +41,12 @@ def calculate_fitness(routes: List[List[int]], graph: Graph) -> float:
     total_profit = 0.0
     total_visit_costs = 0.0
     total_hiring_cost = 0.0
+    total_travel_cost = 0.0  # <--- NOWOŚĆ: Sumator kosztów paliwa
     
     total_penalty = 0.0 
+    
+    # Koszt za jednostkę dystansu (musi być taki sam jak w decode!)
+    COST_PER_UNIT = 1.0 
 
     for route in routes:
         if not route:
@@ -57,8 +61,11 @@ def calculate_fitness(routes: List[List[int]], graph: Graph) -> float:
             school = graph.nodes_dict[next_node_id]
             
             travel_time = graph.get_travel_time(current_node_id, next_node_id)
-            arrival_time = current_time + travel_time
             
+            # --- DODAJEMY KOSZT PRZEJAZDU ---
+            total_travel_cost += travel_time * COST_PER_UNIT
+            
+            arrival_time = current_time + travel_time
             start_service_time = max(arrival_time, school.time_window_start)
             
             if start_service_time > school.time_window_end:
@@ -74,25 +81,33 @@ def calculate_fitness(routes: List[List[int]], graph: Graph) -> float:
             total_visit_costs += school.visit_cost
             
         return_time = graph.get_travel_time(current_node_id, graph.depot_id)
+        
+        total_travel_cost += return_time * COST_PER_UNIT
+        
         end_of_day_time = current_time + return_time
         
         if end_of_day_time > graph.max_vehicle_time:
             overtime = end_of_day_time - graph.max_vehicle_time
             total_penalty += overtime * graph.penalty_factor / 250
 
-    fitness = total_profit - (total_visit_costs + total_hiring_cost + total_penalty)
+    # Odejmujemy TERAZ TAKŻE total_travel_cost
+    fitness = total_profit - (total_visit_costs + total_hiring_cost + total_travel_cost + total_penalty)
     
     return fitness
 
 def decode_chromosome(chromosome: List[int], graph: Graph) -> List[List[int]]:
     
-    routes = []
+    # --- ETAP 1: Budowanie tras (Pakowanie) ---
+    # Tutaj nie martwimy się o koszty, tylko o to, żeby szkoły zmieściły się w oknach czasowych.
+    
+    candidate_routes = []
     current_route = []
     current_time = 0.0
     current_node_id = graph.depot_id
     
     for school_id in chromosome:
         school = graph.nodes_dict[school_id]
+        
         dist_to = graph.get_travel_time(current_node_id, school_id)
         dist_back = graph.get_travel_time(school_id, graph.depot_id)
         
@@ -101,24 +116,63 @@ def decode_chromosome(chromosome: List[int], graph: Graph) -> List[List[int]]:
         finish = start + school.service_time
         total_time_if_added = finish + dist_back
         
-        if total_time_if_added <= graph.max_vehicle_time:
+        fits_in_time_window = start <= school.time_window_end
+        fits_in_vehicle = fits_in_time_window and (total_time_if_added <= graph.max_vehicle_time)
+        
+        if fits_in_vehicle:
             current_route.append(school_id)
             current_time = finish
             current_node_id = school_id
         else:
             if current_route:
-                routes.append(current_route)
+                candidate_routes.append(current_route)
             
-            current_route = [school_id]
             dist_from_depot = graph.get_travel_time(graph.depot_id, school_id)
             start_new = max(dist_from_depot, school.time_window_start)
-            current_time = start_new + school.service_time
-            current_node_id = school_id
             
+            if start_new <= school.time_window_end:
+                current_route = [school_id]
+                current_time = start_new + school.service_time
+                current_node_id = school_id
+            else:
+                current_route = []
+                current_time = 0.0
+                current_node_id = graph.depot_id
+                
     if current_route:
-        routes.append(current_route)
+        candidate_routes.append(current_route)
+    
+    final_routes = []
+    COST_PER_UNIT = 1.0
+    
+    for route in candidate_routes:
+        if not route:
+            continue
+            
+        route_profit = sum(graph.nodes_dict[s_id].profit for s_id in route)
         
-    return routes
+        route_travel_cost = 0.0
+        route_visit_costs = 0.0
+        
+        curr = graph.depot_id
+        for s_id in route:
+            dist = graph.get_travel_time(curr, s_id)
+            route_travel_cost += dist * COST_PER_UNIT
+            route_visit_costs += graph.nodes_dict[s_id].visit_cost
+            curr = s_id
+            
+        # Dodajemy powrót do bazy
+        dist_home = graph.get_travel_time(curr, graph.depot_id)
+        route_travel_cost += dist_home * COST_PER_UNIT
+        
+        total_route_cost = graph.vehicle_hiring_cost + route_travel_cost + route_visit_costs
+        
+        # 3. Decyzja: Czy trasa jest na plusie?
+        if route_profit > total_route_cost:
+            final_routes.append(route)
+        # else: Trasa jest odrzucana w całości (autobus zostaje w bazie)
+
+    return final_routes
 
 #Funkcja pomocnicza do oceny populacji raz na pokolenie
 def score_population(gen: List[List[int]], graph: Graph) -> List[tuple]:
@@ -320,35 +374,3 @@ def run_evolution(graph: Graph, pop_size: int = 60, generations: int = 200,
         population = new_population
     
     return best_global_chromosome, best_global_fitness
-
-
-schools = [
-    # GRUPA A: Muszą być sprzątnięte rano (np. między 8:00 a 10:00)
-    School(1, 1200, 50, 90, 0, 120), 
-    School(2, 1200, 50, 90, 0, 120), # KONFLIKT: Jedna ekipa nie zrobi dwóch szkół po 90 min w 120 min!
-
-    # GRUPA B: Duże szkoły, które zajmują dużo czasu
-    School(3, 1000, 50, 150, 120, 360),
-    School(4, 1000, 50, 150, 120, 360),
-    
-    # GRUPA C: Szkoła popołudniowa
-    School(5, 800, 50, 100, 300, 480),
-    School(6, 800, 50, 100, 300, 480)
-]
-
-# Zwiększamy nieco odległości (dojazdy), by trudniej było "upchnąć" zadania
-size = len(schools) + 1
-weights = [[30.0 for _ in range(size)] for _ in range(size)]
-for i in range(size): weights[i][i] = 0.0
-
-# Inicjalizacja grafu (z kosztem ekipy 1100)
-g = Graph(depot_id=0, nodes=schools, weights=weights, vehicle_hiring_cost=1100.0, max_vehicle_time=480.0)
-
-
-# 4. START!
-best_path, best_val = run_evolution(g, pop_size=40, generations=50, mutation_mode='hybrid')
-
-print("\n--- WYNIK KOŃCOWY ---")
-print(f"Najlepszy zysk: {best_val}")
-print(f"Trasa: {best_path}")
-print(f"Podział na pojazdy: {decode_chromosome(best_path, g)}")
