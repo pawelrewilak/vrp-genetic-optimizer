@@ -1,55 +1,198 @@
 <!DOCTYPE html>
-<html>
+<html lang="pl">
 <head>
-    <title>Edycja Szkół</title>
+    <meta charset="UTF-8">
+    <title>Edytor Mapy VRP</title>
 
     <style>
-        body{
+        body {
             background-color: #c5c5dc;
             font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+
+            height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
         }
 
-        .tabela {
+        .table-container{
             background-color: white;
-            padding: 30px;
+            padding: 40px;
+            padding-top: 10px;
             border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             width: 900px;
             text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
         }
 
-        h1 { color: #333; margin-top: 0; margin-bottom: 30px; }
-        h3 { margin-top: 0; color: #444; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        h1{
+            font-size: 28;
+            color: #333;
+            margin-top: 0;
+            margin-bottom: 30px;
+        }
+
+        h3{
+            font-size: 28;
+            color: #555;
+            margin-top: 0;
+            margin-bottom: 30px;
+        }
 
         .edycja-container{
             display: flex;
-            gap: 40px
+            gap: 40px;
+            align-items: flex-start;
+            text-align: left;
         }
 
-    </style>
-</head> 
-<body>
-    <div class="tabela">
-        <h1>Edycja szkół</h1>
+        .formularz-szkoly{
+            flex: 1;
+        }
 
-        <div class="edycja-container">
+        .mapa-szkoly{
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        canvas {
+            background-color: #f0f0f0;
+            border: 2px solid #333;
+            border-radius: 4px;
+            cursor: crosshair;
+            margin-top: 15px;
+        }
+
+        .licznik {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+            font-weight: bold;
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #555;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
+        input[readonly] {
+            background-color: #e9ecef;
+            color: #666;
+            cursor: not-allowed;
+        }
+
+        .input-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 25px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        button:hover {
+            background-color: #218838; /* Ciemniejszy zielony po najechaniu */
+        }
+
+
+    </style>
+</head>
+
+<body>
+
+    <div class="table-container">
+        <h1>Edytor Szkół VRP</h1> <div class="edycja-container">
             
             <div class="formularz-szkoly">
-                <h3>Parametry</h3>
+                <div class="formularz-szkoly">
+                <h3>Parametry Szkoły</h3>
+
+                <label>ID Szkoły (Auto):</label>
+                <input type="number" id="new_id" value="1" readonly>
+
+                <label>Lokalizacja (0-100):</label>
+                <div class="input-grid">
+                    <input type="number" id="new_x" placeholder="X">
+                    <input type="number" id="new_y" placeholder="Y">
                 </div>
 
-            <div class="mapa-wrapper">
-                <h3>Mapa</h3>
+                <label>Okno czasowe (godzina):</label>
+                <div class="input-grid">
+                    <input type="time" id="new_tmin" placeholder="Start">
+                    <input type="time" id="new_tmax" placeholder="Koniec">
                 </div>
 
-        </div>
-    </div>
+                <label>Zysk (Profit):</label>
+                <input type="number" id="new_profit" value="10">
 
+                <button id="btn-dodaj">+ Dodaj szkołę</button>
+            </div>
+            </div>
+
+            <div class="mapa-szkoly">
+                <h3>Mapa Szkół</h3>
+                
+                <canvas id="mojapapa" width="400" height="400"></canvas>
+                
+                <div class="licznik">Liczba szkół: 0</div>
+            </div>
+
+        </div> </div>
+
+
+<script>
+        const canvas = document.getElementById('mojapapa');
+        const ctx = canvas.getContext('2d');
+        const ROZMIAR_MAPY = 400; 
+        
+        const SKALA = ROZMIAR_MAPY / 100; 
+
+        let listaSzkol = [];
+
+        function rysujPunkt(x, y, kolor) {
+            let pixelX = x * SKALA;
+            
+            
+            let pixelY = ROZMIAR_MAPY - (y * SKALA); 
+
+            ctx.beginPath();
+            ctx.arc(pixelX, pixelY, 6, 0, Math.PI * 2);
+            ctx.fillStyle = kolor;
+            ctx.fill();
+            ctx.strokeStyle = "black";
+            ctx.stroke();
+        }
+
+        rysujPunkt(50, 50, "red");
+        
+        console.log("System gotowy. Skala mapy:", SKALA);
+    </script>
+</body>
 </body>
 
 </html>
