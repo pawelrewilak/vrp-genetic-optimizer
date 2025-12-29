@@ -1,36 +1,46 @@
 from typing import List
+import math
 import random
 
 class School:
-    def __init__(self, id: int, profit: float, visit_cost: float, 
-                 service_time: float, time_window_start: float, time_window_end: float):
+    def __init__(self, id: int, x: float, y: float, profit: float, 
+                 service_time: float, time_window_start: float, time_window_end: float,
+                 visit_cost: float = 0.0):
         self.id = id
+        self.x = x
+        self.y = y
         self.profit = profit          
         self.visit_cost = visit_cost  
         self.service_time = service_time      
         self.time_window_start = time_window_start 
-        self.time_window_end = time_window_end     
+        self.time_window_end = time_window_end
 
     def __repr__(self):
         return f"School(id={self.id}, Okno=[{self.time_window_start}-{self.time_window_end}])"
 
 
 class Graph:
-    def __init__(self, depot_id: int = 0, 
+    def __init__(self, nodes: List[School], depot_id: int = 0, 
                  vehicle_hiring_cost: float = 1200, 
                  max_vehicle_time: float = 480.0,    
-                 penalty_factor: float = 1000.0,     
-                 weights: List[List[float]] = None, 
-                 nodes: List[School] = None):
+                 penalty_factor: float = 1000.0):
         
-        self.nodes_dict = {s.id: s for s in nodes} if nodes else {}
+        self.nodes = nodes
+        self.nodes_dict = {s.id: s for s in nodes}
         self.depot_id = depot_id
         self.vehicle_hiring_cost = vehicle_hiring_cost
         self.max_vehicle_time = max_vehicle_time
         self.penalty_factor = penalty_factor
         
-        self.weights = weights if weights is not None else []
-        self.nodes = nodes if nodes is not None else []
+        self.weights = {} 
+        for s1 in nodes:
+            self.weights[s1.id] = {}
+            for s2 in nodes:
+                if s1.id == s2.id:
+                    self.weights[s1.id][s2.id] = 0.0
+                else:
+                    dist = math.hypot(s1.x - s2.x, s1.y - s2.y)
+                    self.weights[s1.id][s2.id] = dist
 
     def get_travel_time(self, i: int, j: int) -> float:
         return self.weights[i][j]
@@ -287,7 +297,7 @@ def inversion_mutate(chromosome: List[int], mutation_rate: float = 0.05) -> List
 def insertion_mutate(chromosome: List[int], mutation_rate: float = 0.55) -> List[int]:
     if random.random() > mutation_rate:
         return chromosome
-    
+
     new_chromosome = chromosome[:] 
     idx_from = random.randint(0, len(new_chromosome) - 1)
     idx_to = random.randint(0, len(new_chromosome) - 1)

@@ -141,11 +141,14 @@
                     <input type="number" id="new_y" placeholder="Y">
                 </div>
 
-                <label>Okno czasowe (godzina):</label>
+                <label>Okno czasowe (8:00 - 16:00)</label>
                 <div class="input-grid">
-                    <input type="time" id="new_tmin" placeholder="Start">
-                    <input type="time" id="new_tmax" placeholder="Koniec">
+                    <input type="time" id="new_tmin" value="08:00">
+                    <input type="time" id="new_tmax" value="16:00">
                 </div>
+
+                <label>Czas serwisu (min):</label>
+                <input type="number" id="service_time" value="10">
 
                 <label>Zysk (Profit):</label>
                 <input type="number" id="new_profit" value="10">
@@ -166,32 +169,175 @@
 
 
 <script>
-        const canvas = document.getElementById('mojapapa');
-        const ctx = canvas.getContext('2d');
-        const ROZMIAR_MAPY = 400; 
+    /* =========================================
+       SEKCJA 1: KONFIGURACJA I ZMIENNE
+       ========================================= */
+    
+    // 1. Pobieramy elementy mapy
+    const canvas = document.getElementById('mojapapa');
+    const ctx = canvas.getContext('2d'); // Nasz pędzel
+
+    // 2. Ustawienia wymiarów (Bardzo Ważne!)
+    const ROZMIAR_CANVAS = 400;  // Tyle pikseli ma Twój <canvas width="...">
+    const MAX_WSPOLRZEDNA = 100; // Tyle jednostek ma Twoja mapa (0-100)
+    
+    // 3. Obliczamy skalę (np. 400 / 100 = 4 piksele na 1 jednostkę)
+    const SKALA = ROZMIAR_CANVAS / MAX_WSPOLRZEDNA;
+
+    // 4. Ustawienia Czasu
+    const GODZINA_STARTU = 8; // Dzień pracy zaczyna się o 8:00 (to będzie nasza minuta 0)
+    const MINUTY_STARTU = GODZINA_STARTU * 60; // 8 * 60 = 480 minut od północy
+
+    // 5. Magazyn danych (Tu trafią szkoły, które wyślesz do Pythona)
+    let listaSzkol = [];
+
+    /* =========================================
+       SEKCJA 2: NARZĘDZIA (Funkcje pomocnicze)
+       ========================================= */
+
+    /**
+     * Funkcja: Zmienia godzinę "09:30" na liczbę minut od startu pracy.
+     * Przykład: "08:30" -> 30 (bo 30 min po 8:00)
+     */
+    function czasNaMinuty(czasString) {
+        if (!czasString) return 0;
+
+        let czesci = czasString.split(':');
+        let godziny = parseInt(czesci[0]);
+        let minuty = parseInt(czesci[1]);
+
+        let totalMinuty = (godziny * 60) + minuty;
+
+        return totalMinuty - MINUTY_STARTU;
+    }
+
+    /**
+     * Funkcja: Rysuje kropkę na mapie.
+     * Przelicza matematykę (X, Y) na piksele ekranu.
+     */
+    function rysujPunkt(x, y, kolor, rozmiar = 5) {
+        // A. Przeliczenie X (Proste mnożenie)
+        let pixelX = x * SKALA;
+
+        // B. Przeliczenie Y (Obracamy oś, bo w komputerze Y rośnie w dół)
+        let pixelY = ROZMIAR_CANVAS - (y * SKALA);
+
+        // C. Rysowanie
+        ctx.beginPath();
+        ctx.arc(pixelX, pixelY, rozmiar, 0, Math.PI * 2); // Kółko
+        ctx.fillStyle = kolor;
+        ctx.fill();
+        ctx.strokeStyle = "black"; // Czarna obwódka dla kontrastu
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    }
+
+    /* =========================================
+       SEKCJA 3: START (Inicjalizacja)
+       ========================================= */
+
+    // Na start rysujemy BAZĘ (Depot) na środku (50, 50)
+    // Zysk dla bazy to 0, czas nieistotny
+    console.log("System VRP Map Editor - Gotowy.");
+    rysujPunkt(50, 50, "red", 7); // Czerwona, nieco większa kropka
+
+    /* =========================================
+       SEKCJA 4: LOGIKA (Obsługa Przycisku)
+       ========================================= */
+
+    const btn = document.getElementById('btn-dodaj');
+
+    btn.addEventListener('click', function() {
         
-        const SKALA = ROZMIAR_MAPY / 100; 
+        // --- A. POBIERANIE DANYCH Z INPUTÓW ---
+        let idInput = document.getElementById('new_id');
+        let xInput = document.getElementById('new_x');
+        let yInput = document.getElementById('new_y');
+        let pInput = document.getElementById('new_profit');
+        let tminInput = document.getElementById('new_tmin'); // type="time"
+        let tmaxInput = document.getElementById('new_tmax'); // type="time"
+        let servicetime = document.getElementById('service_time');
 
-        let listaSzkol = [];
+        // --- B. KONWERSJA (Tekst -> Liczby) ---
+        let currentId = parseInt(idInput.value);
+        let x = parseFloat(xInput.value);
+        let y = parseFloat(yInput.value);
+        let profit = parseFloat(pInput.value);
+        
+        // Używamy naszej funkcji pomocniczej do czasu
+        let tmin = czasNaMinuty(tminInput.value);
+        let tmax = czasNaMinuty(tmaxInput.value);
 
-        function rysujPunkt(x, y, kolor) {
-            let pixelX = x * SKALA;
-            
-            
-            let pixelY = ROZMIAR_MAPY - (y * SKALA); 
-
-            ctx.beginPath();
-            ctx.arc(pixelX, pixelY, 6, 0, Math.PI * 2);
-            ctx.fillStyle = kolor;
-            ctx.fill();
-            ctx.strokeStyle = "black";
-            ctx.stroke();
+        // --- C. WALIDACJA (Strażnik błędów) ---
+        
+        // 1. Czy wpisano liczby?
+        if (isNaN(x) || isNaN(y)) {
+            alert("Błąd: Musisz podać współrzędne X i Y!");
+            return; // Stop funkcji
         }
 
-        rysujPunkt(50, 50, "red");
+        // 2. Czy mieszczą się na mapie?
+        if (x < 0 || x > MAX_WSPOLRZEDNA || y < 0 || y > MAX_WSPOLRZEDNA) {
+            alert(`Błąd: Współrzędne muszą być z zakresu 0-${MAX_WSPOLRZEDNA}!`);
+            return;
+        }
+
+        // 3. Czy czas ma sens? (Koniec musi być po starcie)
+        if (tmin > tmax) {
+            alert("Błąd: Godzina zakończenia nie może być wcześniejsza niż startu!");
+            return;
+        }
+
+        if (servicetime > (tmax - tmin)){
+            alert("Błąd: Zbyt krótkie okno czasowe!");
+            return;
+        }
+
+        // --- D. ZAPISYWANIE DANYCH ---
         
-        console.log("System gotowy. Skala mapy:", SKALA);
-    </script>
+        // Tworzymy obiekt "Szkoła"
+
+        let nowaSzkola = {
+            id: currentId,
+            x: x,
+            y: y,
+            profit: profit,
+            service_time: servicetime,
+    
+            time_window_start: tmin, 
+            time_window_end: tmax,
+    
+            display_time: [tminInput.value, tmaxInput.value]
+        };
+
+        listaSzkol.push(nowaSzkola);
+
+        // --- E. AKTUALIZACJA EKRANU ---
+        
+        // 1. Rysujemy niebieską kropkę
+        rysujPunkt(x, y, "#007bff"); 
+
+        // 2. Aktualizujemy licznik pod mapą
+        document.getElementById('licznik_szkol').innerText = "Liczba szkół: " + listaSzkol.length;
+
+        // --- F. SPRZĄTANIE I PRZYGOTOWANIE DO NASTĘPNEJ ---
+        
+        // Zwiększamy ID o 1
+        idInput.value = currentId + 1;
+
+        // Czyścimy pola współrzędnych (ale zostawiamy czas i zysk, bo często są podobne)
+        xInput.value = "";
+        yInput.value = "";
+        
+        // Ustawiamy kursor w polu X, żebyś mógł od razu pisać
+        xInput.focus();
+
+        // Log dla programisty (zobaczysz to w konsoli F12)
+        console.log("Dodano:", nowaSzkola);
+        console.log("Cała lista:", listaSzkol);
+    });
+    
+</script>
 </body>
 </body>
 
