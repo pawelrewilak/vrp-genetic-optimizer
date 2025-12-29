@@ -107,6 +107,26 @@
             color: white;
             border-color: #007bff;
         }
+
+        .szanse-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .input-box {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .small-label {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 5px;
+            font-weight: bold;
+            text-align: center;
+        }
     </style>
 
 </head>
@@ -135,36 +155,40 @@
 
             <input type="radio" id="m4" name="tryb_mutacji" value="scr">
             <label for="m4">Scramble</label>
+
+            <input type="radio" id="m5" name="tryb_mutacji" value="hybrid">
+            <label for="m5">Hybrid</label>
         </div>
+
         <label style="margin-top: 20px;">Szanse mutacji (Dla każdego typu):</label>
+        
+        <div class="szanse-grid">
+            
+            <div class="input-box">
+                <span class="small-label">Swap</span>
+                <input type="number" id="mut_rate1" value="0.55" step="0.01">
+            </div>
 
-    <label style="margin-top: 20px;">Szanse mutacji:</label>
+            <div class="input-box">
+                <span class="small-label">Inversion</span>
+                <input type="number" id="mut_rate2" value="0.55" step="0.01">
+            </div>
+            
+            <div class="input-box">
+                <span class="small-label">Insertion</span>
+                <input type="number" id="mut_rate3" value="0.55" step="0.01">
+            </div>
+            
+            <div class="input-box">
+                <span class="small-label">Scramble</span>
+                <input type="number" id="mut_rate4" value="0.55" step="0.01">
+            </div>
 
-    <div class="siatka-mutacji">
-    
-        <div class="maly-box" id="box_swap">
-            <span class="opis">Swap</span>
-            <input type="number" id="rate_swap" value="0.55" step="0.01">
         </div>
-
-        <div class="maly-box" id="box_inv">
-            <span class="opis">Inversion</span>
-            <input type="number" id="rate_inv" value="0.55" step="0.01">
-        </div>
-
-        <div class="maly-box" id="box_ins">
-            <span class="opis">Insertion</span>
-            <input type="number" id="rate_ins" value="0.55" step="0.01">
-        </div>
-
-        <div class="maly-box" id="box_scr">
-            <span class="opis">Scramble</span>
-            <input type="number" id="rate_scr" value="0.55" step="0.01">
-        </div>
+        
+        <button>Zatwierdź parametry</button>
 
     </div>
-
-
 
 </body>
 </html>
