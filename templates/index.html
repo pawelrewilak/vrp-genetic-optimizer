@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Menadżer VRP</title>
+
+    <style>
+        body{
+            background-color: #c5c5dc;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 450px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+
+        label {
+            display: block;
+            text-align: left;
+            margin-bottom: 8px;
+            margin-top: 15px;
+            color: #555;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 16px;
+            background-color: #fafafa;
+            transition: 0.3s;
+        }
+
+        input:focus {
+            border-color: #007bff;
+            outline: none;
+            background-color: #fff;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            margin-top: 25px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .radio-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .radio-container input[type="radio"] {
+            display: none;
+        }
+
+        .radio-container label {
+            flex: 1;
+            padding: 10px;
+            background-color: #fafafa;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 0;
+            transition: 0.2s;
+        }
+
+        .radio-container label:hover {
+            background-color: #e9ecef;
+        }
+
+        .radio-container input[type="radio"]:checked + label {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+    </style>
+
+</head>
+<body>
+
+    <div class="container">
+        <h1>Panel Sterowania VRP</h1>
+
+        <label>Wielkość generacji (pop_size):</label>
+        <input type="number" id="pop_size" value="60" >
+
+        <label>Ilość iteracji (generations):</label>
+        <input type="number" id="generations" value="250">
+
+        <label>Metoda mutacji:</label>
+
+        <div class="radio-container">
+            <input type="radio" id="m1" name="tryb_mutacji" value="swap" checked>
+            <label for="m1">Swap</label>
+
+            <input type="radio" id="m2" name="tryb_mutacji" value="inv">
+            <label for="m2">Inversion</label>
+
+            <input type="radio" id="m3" name="tryb_mutacji" value="ins">
+            <label for="m3">Insertion</label>
+
+            <input type="radio" id="m4" name="tryb_mutacji" value="scr">
+            <label for="m4">Scramble</label>
+        </div>
+        <label style="margin-top: 20px;">Szanse mutacji (Dla każdego typu):</label>
+
+    <label style="margin-top: 20px;">Szanse mutacji:</label>
+
+    <div class="siatka-mutacji">
+    
+        <div class="maly-box" id="box_swap">
+            <span class="opis">Swap</span>
+            <input type="number" id="rate_swap" value="0.55" step="0.01">
+        </div>
+
+        <div class="maly-box" id="box_inv">
+            <span class="opis">Inversion</span>
+            <input type="number" id="rate_inv" value="0.55" step="0.01">
+        </div>
+
+        <div class="maly-box" id="box_ins">
+            <span class="opis">Insertion</span>
+            <input type="number" id="rate_ins" value="0.55" step="0.01">
+        </div>
+
+        <div class="maly-box" id="box_scr">
+            <span class="opis">Scramble</span>
+            <input type="number" id="rate_scr" value="0.55" step="0.01">
+        </div>
+
+    </div>
+
+
+
+</body>
+</html>
