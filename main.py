@@ -342,6 +342,9 @@ def run_evolution(graph: Graph, pop_size: int = 60, generations: int = 200,
                   mut_rates: List[float] = [0.55, 0.55, 0.55, 0.55, 1], 
                   cross_mode: str = 'order'):
     
+    fitness_graph_y =[]
+    best_fitness_graph_y =[]
+    
     all_school_ids = [s.id for s in graph.nodes if s.id != graph.depot_id]
     population = [random.sample(all_school_ids, len(all_school_ids)) for _ in range(pop_size)]
 
@@ -354,12 +357,16 @@ def run_evolution(graph: Graph, pop_size: int = 60, generations: int = 200,
         scored_generation.sort(key=lambda x: x[1], reverse=True)
 
         best_local_chromosome, best_local_fitness = scored_generation[0]
-
-        # 2. Archiwizacja najlepszego (z kopią!)
+        fitness_graph_y.append(best_local_fitness)
+        
         if best_local_fitness > best_global_fitness:
             best_global_fitness = best_local_fitness
+            best_fitness_graph_y.append(best_local_fitness)
             best_global_chromosome = best_local_chromosome[:] 
             print(f"Generacja {gen}: Rekord = {best_global_fitness:.2f}")
+        
+        else:
+            best_fitness_graph_y.append(best_fitness_graph_y[-1])
 
         # 3. Budowa nowej populacji
         new_population = []
@@ -382,5 +389,12 @@ def run_evolution(graph: Graph, pop_size: int = 60, generations: int = 200,
             new_population.append(child)
         
         population = new_population
+
+    final_routes = decode_chromosome(best_global_chromosome, graph)
     
-    return best_global_chromosome, best_global_fitness
+    return {
+        "best_fitness": best_global_fitness,
+        "history": fitness_graph_y,
+        "history_best": best_fitness_graph_y,
+        "routes": final_routes
+    }
