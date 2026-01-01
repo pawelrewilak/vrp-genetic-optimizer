@@ -33,16 +33,18 @@ def oblicz_vrp():
         )
         nodes.append(nowa_szkola)
 
-        graph = Graph(nodes, depot_id=0)
+    graph = Graph(nodes, depot_id=0)
 
-        wynik = run_evolution(
-            graph,
-            pop_size=int(params['pop_size']),
-            generations=int(params['generations']),
-            mutation_mode=params['mutation_mode'],
-            mut_rates=params['mut_rates']
-            cross_mode=params['cross_mode']
+    wynik = run_evolution(
+        graph,
+        pop_size=int(params['pop_size']),
+        generations=int(params['generations']),
+        mutation_mode=params['mutation_mode'],
+        mut_rates=params['mut_rates'],
+        cross_mode=params['cross_mode']
     )
+    return jsonify(wynik)
+
 
 
 

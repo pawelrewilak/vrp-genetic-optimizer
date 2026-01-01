@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <head>
     <meta charset="UTF-8">
     <title>Dashboard VRP</title>
@@ -145,6 +146,34 @@
             cursor: crosshair;
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
+
+        .modal {
+            display: none;
+            position: fixed; 
+            z-index: 1000; 
+            left: 0; top: 0;
+            width: 100%; height: 100%; 
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+            justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 12px;
+            width: 700px; height: 500px;
+            box-shadow: 0 5px 30px rgba(0,0,0,0.3);
+            position: relative;
+            display: flex; flex-direction: column;
+        }
+        .close-btn {
+            position: absolute;
+            top: 10px; right: 15px;
+            font-size: 24px; font-weight: bold; color: #333;
+            cursor: pointer;
+        }
+
+
     </style>
 </head>
 <body>
@@ -268,6 +297,15 @@
         <div id="licznik_szkol" style="margin-top:10px; font-weight:bold;">Liczba szkół: 0</div>
     </div>
 
+    <div id="modalWykres" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="zamknijWykres()">&times;</span>
+            <h2 style="margin-top:0; text-align: center;">Postęp Ewolucji</h2>
+            <canvas id="wykresCanvas"></canvas>
+        </div>
+    </div>
+
+
     <script>
         // --- KONFIGURACJA ---
         const canvas = document.getElementById('mojapapa');
@@ -280,6 +318,96 @@
         const MINUTY_STARTU = GODZINA_STARTU * 60; 
 
         let listaSzkol = [];
+
+        // --- ZMIENNE POMOCNICZE DO WIZUALIZACJI ---
+    let wykresInstancja = null;
+    const KOLORY_TRAS = ["#FF0000", "#008000", "#0000FF", "#FFA500", "#800080", "#00CED1", "#FF1493"];
+
+    // --- FUNKCJA: Rysowanie tras na mapie ---
+    function rysujTrasy(trasy) {
+        // 1. Czyścimy mapę i rysujemy punkty od nowa
+        ctx.clearRect(0, 0, ROZMIAR_CANVAS, ROZMIAR_CANVAS);
+        rysujPunkt(300, 30, "red", 8); // Rysuj bazę (Depot) - Pamiętaj o współrzędnych z server.py!
+        
+        listaSzkol.forEach(s => rysujPunkt(s.x, s.y, "#007bff"));
+
+        // 2. Rysujemy linie
+        trasy.forEach((trasa, index) => {
+            ctx.beginPath();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = KOLORY_TRAS[index % KOLORY_TRAS.length]; // Cykliczne kolory
+
+            // Startujemy od bazy (ID 0) -> (300, 30)
+            let startX = 300; 
+            let startY = ROZMIAR_CANVAS - 30;
+            ctx.moveTo(startX, startY);
+
+            trasa.forEach(idSzkoly => {
+                if (idSzkoly === 0) {
+                    // Powrót do bazy
+                    ctx.lineTo(startX, startY);
+                } else {
+                    // Szukamy szkoły w JS
+                    let szkola = listaSzkol.find(s => s.id === idSzkoly);
+                    if (szkola) {
+                        let px = szkola.x;
+                        let py = ROZMIAR_CANVAS - szkola.y;
+                        ctx.lineTo(px, py);
+                    }
+                }
+            });
+            ctx.stroke();
+        });
+    }
+
+    // --- FUNKCJA: Pokazywanie wykresu ---
+    function pokazWykres(historia, historiaBest) {
+        const modal = document.getElementById('modalWykres');
+        const ctxWykres = document.getElementById('wykresCanvas').getContext('2d');
+        
+        modal.style.display = 'flex';
+
+        if (wykresInstancja) wykresInstancja.destroy();
+
+        const labels = historia.map((_, i) => i + 1);
+
+        wykresInstancja = new Chart(ctxWykres, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Rekord Globalny',
+                        data: historiaBest,
+                        borderColor: '#28a745',
+                        borderWidth: 2,
+                        tension: 0,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'Populacja',
+                        data: historia,
+                        borderColor: '#007bff',
+                        borderWidth: 1,
+                        borderDash: [5, 5],
+                        pointRadius: 0
+                    }
+                ]
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false,
+                scales: {
+                    x: { title: { display: true, text: 'Generacja' } },
+                    y: { title: { display: true, text: 'Zysk (Fitness)' } }
+                }
+            }
+        });
+    }
+
+    function zamknijWykres() {
+        document.getElementById('modalWykres').style.display = 'none';
+    }
 
         // --- FUNKCJE POMOCNICZE ---
         function czasNaMinuty(czasString) {
@@ -503,11 +631,19 @@
                 }
 
                 // D. Odbieramy wynik
+                
                 const wynik = await odpowiedz.json();
                 console.log("Serwer zwrócił: ", wynik);
                 
-                // TU BĘDZIE MIEJSCE NA RYSOWANIE TRAS (kolejny krok)
-                // np. rysujTrasy(wynik.routes);
+                // 1. Rysujemy trasy na mapie
+                if (wynik.routes) {
+                    rysujTrasy(wynik.routes);
+                }
+
+                // 2. Pokazujemy wykres
+                if (wynik.history && wynik.history_best) {
+                    pokazWykres(wynik.history, wynik.history_best);
+                }
                 
                 alert("Obliczenia zakończone sukcesem!");
 
