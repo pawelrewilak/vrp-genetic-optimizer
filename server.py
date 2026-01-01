@@ -46,9 +46,6 @@ def oblicz_vrp():
     return jsonify(wynik)
 
 
-
-
-
 if __name__ == "__main__":
     app.run(debug=True)
 

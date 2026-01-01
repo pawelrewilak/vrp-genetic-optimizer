@@ -263,12 +263,21 @@
             <button class="btn-green" id="btn-dodaj">+ Dodaj szkołę do mapy</button>
 
         </div>
+
         <div class="card">
             <h2>3. Usuń Szkołę</h2>
 
             <label> Id szkoły do usuniecia</label>
             <input type="number" id="id_delete">
             <button class="btn-red" id="btn-usun">Usuń</button>
+        </div>
+
+        <div class="card" style="background-color: #e8f4fd;"> <h2>Szybki Generator</h2>
+            <label>Ilość szkół do wygenerowania</label>
+            <div class="input-grid" >
+                    <input type="number" id="num_generate">
+                    <button class="btn-blue" id="btn-random" style="margin-top:0;">⚡ Generuj losowo</button>
+            </div>
         </div>
 
         <div class="card">
@@ -312,7 +321,7 @@
         const ctx = canvas.getContext('2d');
         
         const ROZMIAR_CANVAS = 600;  
-        const MAX_WSPOLRZEDNA = 100; 
+        const MAX_WSPOLRZEDNA = 600; 
         const SKALA = ROZMIAR_CANVAS / MAX_WSPOLRZEDNA;
         const GODZINA_STARTU = 8; 
         const MINUTY_STARTU = GODZINA_STARTU * 60; 
@@ -465,7 +474,6 @@
         rysujPunkt(300, 30, "red", 8); 
 
         // --- OBSŁUGA DODAWANIA SZKOŁY ---
-        // --- OBSŁUGA DODAWANIA SZKOŁY ---
         const btnDodaj = document.getElementById('btn-dodaj');
         
         btnDodaj.addEventListener('click', function() {
@@ -522,6 +530,87 @@
             xInput.focus();
         });
 
+const btnRandom = document.getElementById('btn-random');
+
+        // Funkcje pomocnicze muszą być zdefiniowane wcześniej lub tutaj
+        function losujLiczbe(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function minutyNaGodzine(minutyOdStartu) {
+            let totalMinuty = minutyOdStartu + MINUTY_STARTU; 
+            let h = Math.floor(totalMinuty / 60);
+            let m = totalMinuty % 60;
+            return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+        }
+
+        if (btnRandom) { // Zabezpieczenie: sprawdź czy przycisk istnieje
+            btnRandom.addEventListener('click', function() {
+                console.log("Kliknięto generuj losowo"); // Debug w konsoli
+
+                let countInput = document.getElementById('num_generate'); // Zmieniłem ID na zgodne z HTML (num_generate)
+                
+                // Zabezpieczenie przed pustym inputem
+                if (!countInput.value) {
+                    alert("Wpisz ilość szkół!");
+                    return;
+                }
+
+                let ile = parseInt(countInput.value);
+                
+                let idInput = document.getElementById('new_id');
+                let startId = parseInt(idInput.value);
+
+                for (let i = 0; i < ile; i++) {
+                    // 1. Losuj współrzędne
+                    let x = losujLiczbe(10, MAX_WSPOLRZEDNA - 10); 
+                    let y = losujLiczbe(10, MAX_WSPOLRZEDNA - 10);
+                    
+                    // 2. Losuj Zysk
+                    let profit = losujLiczbe(100, 500);
+
+                    // 3. Losuj Okna Czasowe
+                    let tmin = losujLiczbe(0, 300); 
+                    let tmax = tmin + losujLiczbe(60, 180); 
+                    if (tmax > 480) tmax = 480;
+
+                    // 4. Formatowanie
+                    let tminStr = minutyNaGodzine(tmin);
+                    let tmaxStr = minutyNaGodzine(tmax);
+
+                    let nowaSzkola = {
+                        id: startId + i,
+                        x: x,
+                        y: y,
+                        profit: profit,
+                        service_time: 20, 
+                        time_window_start: tmin,
+                        time_window_end: tmax,
+                        display_time: [tminStr, tmaxStr]
+                    };
+
+                    // Dodaj i narysuj
+                    listaSzkol.push(nowaSzkola);
+                    
+                    // Bezpośrednie wywołanie rysowania - to musi zadziałać
+                    rysujPunkt(x, y, "#007bff"); 
+                    dodajWierszDoTabeli(nowaSzkola);
+                }
+
+                // Aktualizacja UI
+                idInput.value = startId + ile;
+                document.getElementById('licznik_szkol').innerText = "Liczba szkół: " + listaSzkol.length;
+                
+                // Wymuś przerysowanie wszystkiego (opcjonalnie, dla pewności)
+                // ctx.clearRect(0, 0, ROZMIAR_CANVAS, ROZMIAR_CANVAS);
+                // rysujPunkt(300, 30, "red", 8);
+                // listaSzkol.forEach(s => rysujPunkt(s.x, s.y, "#007bff"));
+
+                console.log(`Wylosowano ${ile} szkół. Lista:`, listaSzkol);
+            });
+        } else {
+            console.error("Nie znaleziono przycisku btn-random!");
+        }
         
         const btnUsun = document.getElementById('btn-usun');
         

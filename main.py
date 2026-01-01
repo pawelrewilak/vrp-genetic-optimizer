@@ -31,6 +31,12 @@ class Graph:
         self.vehicle_hiring_cost = vehicle_hiring_cost
         self.max_vehicle_time = max_vehicle_time
         self.penalty_factor = penalty_factor
+
+        # --- KALIBRACJA MAPY ---
+        # Mapa 600px = 6km. Prędkość 30km/h.
+        # 100 px = 1 km = 2 minuty jazdy.
+        # Czyli 1 px = 0.02 minuty.
+        PIXEL_TO_MINUTE_FACTOR = 0.02
         
         self.weights = {} 
         for s1 in nodes:
@@ -39,11 +45,13 @@ class Graph:
                 if s1.id == s2.id:
                     self.weights[s1.id][s2.id] = 0.0
                 else:
-                    dist = math.hypot(s1.x - s2.x, s1.y - s2.y)
-                    self.weights[s1.id][s2.id] = dist
+                    dist_pixels = math.hypot(s1.x - s2.x, s1.y - s2.y)
+                    # Zamieniamy piksele na minuty!
+                    self.weights[s1.id][s2.id] = dist_pixels * PIXEL_TO_MINUTE_FACTOR
 
     def get_travel_time(self, i: int, j: int) -> float:
         return self.weights[i][j]
+
 
 
 def calculate_fitness(routes: List[List[int]], graph: Graph) -> float:
@@ -51,12 +59,12 @@ def calculate_fitness(routes: List[List[int]], graph: Graph) -> float:
     total_profit = 0.0
     total_visit_costs = 0.0
     total_hiring_cost = 0.0
-    total_travel_cost = 0.0  # <--- NOWOŚĆ: Sumator kosztów paliwa
+    total_travel_cost = 0.0
     
     total_penalty = 0.0 
     
     # Koszt za jednostkę dystansu (musi być taki sam jak w decode!)
-    COST_PER_UNIT = 1.0 
+    COST_PER_UNIT = 0.83
 
     for route in routes:
         if not route:
@@ -153,7 +161,7 @@ def decode_chromosome(chromosome: List[int], graph: Graph) -> List[List[int]]:
         candidate_routes.append(current_route)
     
     final_routes = []
-    COST_PER_UNIT = 1.0
+    COST_PER_UNIT = 0.83
     
     for route in candidate_routes:
         if not route:
