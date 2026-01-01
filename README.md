@@ -1,13 +1,15 @@
-# VRP Genetic Solver 🚚
+# Cleaning Service VRP Optimizer 🧹
 
-Prosta aplikacja webowa do rozwiązywania problemu trasowania pojazdów z oknami czasowymi (VRPTW). Projekt wykorzystuje **algorytm genetyczny** do optymalizacji tras autobusów szkolnych, uwzględniając zyski, koszty paliwa i czas pracy kierowców.
+Aplikacja webowa do optymalizacji pracy ekip sprzątających (problem VRPTW). Projekt wykorzystuje **algorytm genetyczny**, aby zmaksymalizować zysk firmy.
 
-## 📌 Co potrafi ten projekt?
-* **Wizualizacja mapy:** Rysowanie tras i punktów (szkół) na canvasie HTML5.
-* **Wykresy na żywo:** Podgląd, jak algorytm "uczy się" z każdym pokoleniem (wykorzystuje Chart.js).
-* **Konfiguracja GA:** Możliwość zmiany wielkości populacji, liczby iteracji oraz metod mutacji (Swap, Inversion, Scramble) i krzyżowania.
-* **Symulacja kosztów:** Realne przeliczanie odległości na mapie na czas i koszt paliwa.
-* **Generator:** Szybkie losowanie punktów do testów.
+Program pomaga podjąć decyzję: **ile ekip zatrudnić danego dnia i jak ułożyć im trasę**, aby przychód ze zleceń był jak najwyższy po odjęciu kosztów (dniówki pracowników, paliwo).
+
+## 📌 Co robi ten projekt?
+* **Optymalizacja Zysku:** Funkcja celu to `Przychód - (Koszt Ekip + Paliwo)`. Algorytm sam decyduje, czy opłaca się wysłać auto do dalekiego klienta.
+* **Wizualizacja mapy:** Rysowanie tras poszczególnych ekip na canvasie HTML5.
+* **Realne koszty:** Przeliczanie odległości na mapie na czas pracy i zużycie paliwa.
+* **Wykresy na żywo:** Podgląd ewolucji rozwiązania i wzrostu zysku w czasie rzeczywistym.
+* **Konfiguracja:** Możliwość zmiany parametrów algorytmu (mutacje, krzyżowanie) oraz kosztów zatrudnienia.
 
 ## 🛠 Technologie
 * **Backend:** Python 3 + Flask
@@ -18,4 +20,4 @@ Prosta aplikacja webowa do rozwiązywania problemu trasowania pojazdów z oknami
 
 1. Sklonuj repozytorium:
    ```bash
-   git clone [https://github.com/TWOJ-NICK/vrp-solver.git](https://github.com/TWOJ-NICK/vrp-solver.git)
+   git clone [https://github.com/TWOJ-NICK/cleaning-vrp.git](https://github.com/TWOJ-NICK/cleaning-vrp.git)
