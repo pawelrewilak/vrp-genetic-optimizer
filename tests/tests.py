@@ -87,7 +87,7 @@ def main_benchmark(num_trials=1, output_file='benchmark_results.csv'):
         num_schools = len(graph.nodes) - 1
 
         for config in (basic_configs + advanced_configs):
-            print(f"Testowanie: {config['config_name']} dla {num_schools} szkół...")
+            #print(f"Testowanie: {config['config_name']} dla {num_schools} szkół...")
 
             for trial in range(num_trials):
                 start_time = time.time()
@@ -138,7 +138,8 @@ def main_benchmark(num_trials=1, output_file='benchmark_results.csv'):
                     end='', flush=True
                 )
 
-
+    print(f"\rPostęp: 100.00% | ETA: 0m 0s | ", end="", flush=True)
+    print()
     results_dir = 'tests_results' 
 
     if not os.path.exists(results_dir):
