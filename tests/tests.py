@@ -1,0 +1,110 @@
+from typing import List
+import random
+import time
+import csv
+from algorithm import run_evolution, School, Graph
+
+def generate_random_instance(num_schools: int, map_size: int = 600, seed: int = None) -> List[School]:
+    """Generuje listę losowych szkół dla zadanej liczby punktów."""
+    if seed is not None:
+        random.seed(seed)
+    
+    schools = []
+    depot = School(id=0, x=map_size/2, y=30, profit=0, service_time=0, 
+                   time_window_start=0, time_window_end=1000)
+    schools.append(depot)
+
+    for i in range(1, num_schools + 1):
+
+        x = random.randint(10, map_size - 10)
+        y = random.randint(10, map_size - 10)
+
+        profit = random.randint(50, 500)
+        t_start = random.randint(0, 300)
+        duration = random.randint(60, 240)
+        t_end = min(t_start + duration, 480)
+        service_time_factor = random.uniform(0.2, 0.4)
+        service_time = int((t_end - t_start) * service_time_factor)
+        
+        s = School(
+            id=i,
+            x=x, y=y,
+            profit=profit,
+            service_time=service_time,
+            time_window_start=t_start,
+            time_window_end=t_end
+        )
+        schools.append(s)
+        
+    return schools
+
+
+def main_benchmark(num_trials=30, output_file='benchmark_results.csv'):
+
+    basic_configs = [
+         # Grupa kontrolna - test ktory pojedyńczy oprator działa najlepiej
+        {'mut' : 'swap', 'rates': [0.15, 0.25, 0.10, 0.05, 1.0], 'crs': 'order', 'config_name': 'swap_0.15_ord'},
+        {'mut' : 'inv', 'rates': [0.15, 0.25, 0.10, 0.05, 1.0], 'crs': 'order', 'config_name': 'inv_0.25_ord'},
+        {'mut' : 'ins', 'rates': [0.15, 0.25, 0.10, 0.05, 1.0], 'crs': 'order', 'config_name': 'ins_0.1_ord'},
+        {'mut' : 'scr', 'rates': [0.15, 0.25, 0.10, 0.05, 1.0], 'crs': 'order', 'config_name': 'scr_0.05_ord'},
+        {'mut' : 'hybrid', 'rates': [0.15, 0.25, 0.10, 0.05, 1.0], 'crs': 'order', 'config_name': 'hybrid_ord'}
+    ]
+
+    advanced_configs = [
+        # 1. Sprawdzenie krzyżowania ERX (często lepsze dla tras)
+        {'mut': 'hybrid', 'rates': [0.15, 0.25, 0.10, 0.05, 1.0], 'crs': 'erx', 'config_name': 'hybrid_ERX'},
+        # 2. Wersja "Agresywna" (podwojone szanse)
+        {'mut': 'hybrid', 'rates': [0.30, 0.50, 0.20, 0.10, 1.0], 'crs': 'order', 'config_name': 'hybrid_Aggressive'},
+        # 3. Wersja "Stabilna" (bardzo małe mutacje)
+        {'mut': 'hybrid', 'rates': [0.05, 0.05, 0.05, 0.05, 1.0], 'crs': 'order', 'config_name': 'hybrid_Stable'},
+        # 4. Wersja skupiona tylko na Inwersji i ERX (prawdopodobnie najsilniejsza)
+        {'mut': 'inv', 'rates': [0.15, 0.4, 0.10, 0.05, 1.0], 'crs': 'erx', 'config_name': 'inv_Heavy_ERX'}
+    ]
+
+    School_quantity = [10, 20, 50, 100]
+    school_data_base = []
+
+    for quantity in School_quantity:
+        instance = generate_random_instance(quantity, seed=42)
+        school_data_base.append(Graph(instance))
+    
+    results = []
+
+    for graph in school_data_base:
+        num_schools = len(graph.nodes) - 1
+
+        for config in (basic_configs + advanced_configs):
+            print(f"Testowanie: {config['config_name']} dla {num_schools} szkół...")
+
+            for trial in range(num_trials):
+                start_time = time.time()
+
+                output = run_evolution(
+                    graph=graph,
+                    pop_size=60, 
+                    generations=300, 
+                    mutation_mode=config['mut'],
+                    mut_rates=config['rates'],
+                    cross_mode=config['crs']
+                )
+
+                duration = time.time() - start_time
+                
+                results.append({
+                    'size': num_schools,
+                    'config': config['config_name'],
+                    'trial': trial,
+                    'fitness': output['best_fitness'],
+                    'time': duration,
+                    'routes_count': len(output['routes'])
+                })
+
+    keys = results[0].keys()
+    with open(output_file, 'w', newline='') as f:
+        dict_writer = csv.DictWriter(f, fieldnames=keys)
+        dict_writer.writeheader()
+        dict_writer.writerows(results)
+    
+    print(f"Benchmark zakończony. Wyniki zapisano w {output_file}")
+
+
