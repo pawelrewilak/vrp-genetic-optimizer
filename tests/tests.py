@@ -1,3 +1,8 @@
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+import json
 from typing import List
 import random
 import time
@@ -39,7 +44,7 @@ def generate_random_instance(num_schools: int, map_size: int = 600, seed: int = 
     return schools
 
 
-def main_benchmark(num_trials=30, output_file='benchmark_results.csv'):
+def main_benchmark(num_trials=1, output_file='benchmark_results.csv'):
 
     basic_configs = [
          # Grupa kontrolna - test ktory pojedyńczy oprator działa najlepiej
@@ -69,6 +74,7 @@ def main_benchmark(num_trials=30, output_file='benchmark_results.csv'):
         school_data_base.append(Graph(instance))
     
     results = []
+    convergence_logs = []
 
     for graph in school_data_base:
         num_schools = len(graph.nodes) - 1
@@ -99,6 +105,13 @@ def main_benchmark(num_trials=30, output_file='benchmark_results.csv'):
                     'routes_count': len(output['routes'])
                 })
 
+                if trial == 0:
+                    convergence_logs.append({
+                        'size': num_schools,
+                        'config': config['config_name'],
+                        'history': output['history_best'] # Lista 300 wartości
+                    })
+
     keys = results[0].keys()
     with open(output_file, 'w', newline='') as f:
         dict_writer = csv.DictWriter(f, fieldnames=keys)
@@ -107,4 +120,10 @@ def main_benchmark(num_trials=30, output_file='benchmark_results.csv'):
     
     print(f"Benchmark zakończony. Wyniki zapisano w {output_file}")
 
-
+    with open('convergence_data.json', 'w') as f:
+        json.dump(convergence_logs, f)
+    
+    print(f"Dane zbieżności zapisano w convergence_data.json")
+    
+if __name__ == '__main__':
+    main_benchmark(30)
