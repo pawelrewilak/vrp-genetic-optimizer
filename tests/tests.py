@@ -139,18 +139,26 @@ def main_benchmark(num_trials=1, output_file='benchmark_results.csv'):
                 )
 
 
+    results_dir = 'tests_results' 
+
+    if not os.path.exists(results_dir):
+        os.makedirs(results_dir)
+
+    csv_path = os.path.join(results_dir, output_file)
+    json_path = os.path.join(results_dir, 'convergence_data.json')
+
     keys = results[0].keys()
-    with open(output_file, 'w', newline='') as f:
+    with open(csv_path, 'w', newline='') as f:
         dict_writer = csv.DictWriter(f, fieldnames=keys)
         dict_writer.writeheader()
         dict_writer.writerows(results)
     
-    print(f"Benchmark zakończony. Wyniki zapisano w {output_file}")
+    print(f"\nBenchmark zakończony. Wyniki zapisano w: {csv_path}")
 
-    with open('convergence_data.json', 'w') as f:
+    with open(json_path, 'w') as f:
         json.dump(convergence_logs, f)
     
-    print(f"Dane zbieżności zapisano w convergence_data.json")
+    print(f"Dane zbieżności zapisano w: {json_path}")
 
 if __name__ == '__main__':
     main_benchmark(30)
