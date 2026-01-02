@@ -1,11 +1,11 @@
 from flask import Flask , render_template, request, jsonify
-from main import School, Graph, run_evolution
+from algorithm import School, Graph, run_evolution
 
 app = Flask(__name__)
 
 @app.route('/')
 def index():
-    return render_template('new_indexx.html')
+    return render_template('index.html')
 
 @app.route('/oblicz-vrp', methods=['POST'])
 def oblicz_vrp():

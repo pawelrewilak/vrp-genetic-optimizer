@@ -31,11 +31,6 @@ class Graph:
         self.vehicle_hiring_cost = vehicle_hiring_cost
         self.max_vehicle_time = max_vehicle_time
         self.penalty_factor = penalty_factor
-
-        # --- KALIBRACJA MAPY ---
-        # Mapa 600px = 6km. Prędkość 30km/h.
-        # 100 px = 1 km = 2 minuty jazdy.
-        # Czyli 1 px = 0.02 minuty.
         PIXEL_TO_MINUTE_FACTOR = 0.02
         
         self.weights = {} 
@@ -46,7 +41,6 @@ class Graph:
                     self.weights[s1.id][s2.id] = 0.0
                 else:
                     dist_pixels = math.hypot(s1.x - s2.x, s1.y - s2.y)
-                    # Zamieniamy piksele na minuty!
                     self.weights[s1.id][s2.id] = dist_pixels * PIXEL_TO_MINUTE_FACTOR
 
     def get_travel_time(self, i: int, j: int) -> float:
@@ -62,8 +56,6 @@ def calculate_fitness(routes: List[List[int]], graph: Graph) -> float:
     total_travel_cost = 0.0
     
     total_penalty = 0.0 
-    
-    # Koszt za jednostkę dystansu (musi być taki sam jak w decode!)
     COST_PER_UNIT = 0.83
 
     for route in routes:
@@ -79,8 +71,6 @@ def calculate_fitness(routes: List[List[int]], graph: Graph) -> float:
             school = graph.nodes_dict[next_node_id]
             
             travel_time = graph.get_travel_time(current_node_id, next_node_id)
-            
-            # --- DODAJEMY KOSZT PRZEJAZDU ---
             total_travel_cost += travel_time * COST_PER_UNIT
             
             arrival_time = current_time + travel_time
@@ -108,15 +98,12 @@ def calculate_fitness(routes: List[List[int]], graph: Graph) -> float:
             overtime = end_of_day_time - graph.max_vehicle_time
             total_penalty += overtime * graph.penalty_factor / 250
 
-    # Odejmujemy TERAZ TAKŻE total_travel_cost
     fitness = total_profit - (total_visit_costs + total_hiring_cost + total_travel_cost + total_penalty)
     
     return fitness
 
 def decode_chromosome(chromosome: List[int], graph: Graph) -> List[List[int]]:
     
-    # --- ETAP 1: Budowanie tras (Pakowanie) ---
-    # Tutaj nie martwimy się o koszty, tylko o to, żeby szkoły zmieściły się w oknach czasowych.
     
     candidate_routes = []
     current_route = []
@@ -179,20 +166,16 @@ def decode_chromosome(chromosome: List[int], graph: Graph) -> List[List[int]]:
             route_visit_costs += graph.nodes_dict[s_id].visit_cost
             curr = s_id
             
-        # Dodajemy powrót do bazy
         dist_home = graph.get_travel_time(curr, graph.depot_id)
         route_travel_cost += dist_home * COST_PER_UNIT
         
         total_route_cost = graph.vehicle_hiring_cost + route_travel_cost + route_visit_costs
         
-        # 3. Decyzja: Czy trasa jest na plusie?
         if route_profit > total_route_cost:
             final_routes.append(route)
-        # else: Trasa jest odrzucana w całości (autobus zostaje w bazie)
 
     return final_routes
 
-#Funkcja pomocnicza do oceny populacji raz na pokolenie
 def score_population(gen: List[List[int]], graph: Graph) -> List[tuple]:
     scored = []
     for chromosome in gen:

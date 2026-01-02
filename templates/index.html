@@ -1,190 +1,149 @@
 <!DOCTYPE html>
-<html>
+<html lang="pl">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 <head>
-    <title>Menadżer VRP</title>
-
-    <style>
-        body{
-            background-color: #c5c5dc;
-            font-family: 'Segoe UI', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-
-        .container {
-            background-color: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            width: 450px;
-            text-align: center;
-        }
-
-        h1 {color: #333; margin-bottom: 25px; margin-top: 0px; font-size: 32px;}
-            
-        label {
-            display: block;
-            text-align: left;
-            margin-bottom: 8px;
-            margin-top: 15px;
-            color: #555;
-            font-weight: 600;
-            font-size: 14px;
-        }
-
-        input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            box-sizing: border-box;
-            font-size: 16px;
-            background-color: #fafafa;
-            transition: 0.3s;
-        }
-
-        input:focus {
-            border-color: #007bff;
-            outline: none;
-            background-color: #fff;
-        }
-
-        button {
-            width: 100%;
-            padding: 14px;
-            margin-top: 25px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-
-        button:hover {
-            background-color: #0056b3;
-        }
-
-        .radio-container {
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .radio-container input[type="radio"] {
-            display: none;
-        }
-
-        .radio-container label {
-            flex: 1;
-            padding: 10px;
-            background-color: #fafafa;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            text-align: center;
-            cursor: pointer;
-            font-size: 14px;
-            margin: 0;
-            transition: 0.2s;
-        }
-
-        .radio-container label:hover {
-            background-color: #e9ecef;
-        }
-
-        .radio-container input[type="radio"]:checked + label {
-            background-color: #007bff;
-            color: white;
-            border-color: #007bff;
-        }
-
-        .szanse-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-top: 10px;
-        }
-
-        .input-box {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .small-label {
-            font-size: 13px;
-            color: #666;
-            margin-bottom: 5px;
-            font-weight: bold;
-            text-align: center;
-        }
-    </style>
-
+    <meta charset="UTF-8">
+    <title>Dashboard VRP</title>
 </head>
 <body>
 
-    <div class="container">
-        <h1>Panel Sterowania VRP</h1>
-
-        <label>Wielkość generacji (pop_size):</label>
-        <input type="number" id="pop_size" value="60" >
-
-        <label>Ilość iteracji (generations):</label>
-        <input type="number" id="generations" value="250">
-
-        <label>Metoda mutacji:</label>
-
-        <div class="radio-container">
-            <input type="radio" id="m1" name="tryb_mutacji" value="swap" checked>
-            <label for="m1">Swap</label>
-
-            <input type="radio" id="m2" name="tryb_mutacji" value="inv">
-            <label for="m2">Inversion</label>
-
-            <input type="radio" id="m3" name="tryb_mutacji" value="ins">
-            <label for="m3">Insertion</label>
-
-            <input type="radio" id="m4" name="tryb_mutacji" value="scr">
-            <label for="m4">Scramble</label>
-
-            <input type="radio" id="m5" name="tryb_mutacji" value="hybrid">
-            <label for="m5">Hybrid</label>
-        </div>
-
-        <label style="margin-top: 20px;">Szanse mutacji (Dla każdego typu):</label>
+    <div class="left-panel">
         
-        <div class="szanse-grid">
+        <div class="card">
+            <h2>1. Konfiguracja Algorytmu</h2>
             
-            <div class="input-box">
-                <span class="small-label">Swap</span>
-                <input type="number" id="mut_rate1" value="0.55" step="0.01">
+            <div class="input-grid">
+                <div>
+                    <label>Populacja:</label>
+                    <input type="number" id="pop_size" value="60">
+                </div>
+                <div>
+                    <label>Iteracje:</label>
+                    <input type="number" id="generations" value="250">
+                </div>
             </div>
 
-            <div class="input-box">
-                <span class="small-label">Inversion</span>
-                <input type="number" id="mut_rate2" value="0.55" step="0.01">
+            <label>Metoda mutacji:</label>
+            <div class="radio-container">
+                <input type="radio" id="m1" name="tryb_mutacji" value="swap" checked>
+                <label for="m1">Swap</label>
+                <input type="radio" id="m2" name="tryb_mutacji" value="inv">
+                <label for="m2">Inv</label>
+                <input type="radio" id="m3" name="tryb_mutacji" value="ins">
+                <label for="m3">Ins</label>
+                <input type="radio" id="m4" name="tryb_mutacji" value="scr">
+                <label for="m4">Scr</label>
+                <input type="radio" id="m5" name="tryb_mutacji" value="hybrid">
+                <label for="m5">Hyb</label>
+            </div>
+
+            
+
+            <label>Metoda krzyżowania</label>
+            <div class="radio-container">
+
+                <input type="radio" id="k1" name="tryb_krzyzowania" value="order" checked>
+                <label for="k1">Order</label>
+                <input type="radio" id="k2" name="tryb_krzyzowania" value="erx">
+                <label for="k2">ERX (Edge Recombination)</label>
+
+            </div>
+
+            <label>Szanse mutacji:</label>
+            <div class="input-grid">
+                <div><label style="margin:0; font-size:11px">Swap</label><input type="number" id="mut_rate1" value="0.55" step="0.01"></div>
+                <div><label style="margin:0; font-size:11px">Inv</label><input type="number" id="mut_rate2" value="0.55" step="0.01"></div>
+                <div><label style="margin:0; font-size:11px">Ins</label><input type="number" id="mut_rate3" value="0.55" step="0.01"></div>
+                <div><label style="margin:0; font-size:11px">Scr</label><input type="number" id="mut_rate4" value="0.55" step="0.01"></div>
             </div>
             
-            <div class="input-box">
-                <span class="small-label">Insertion</span>
-                <input type="number" id="mut_rate3" value="0.55" step="0.01">
-            </div>
+            <button class="btn-blue" id="btn-zatwierdz">Zatwierdź i Oblicz VRP</button>
+        </div>
+
+        <div class="card">
+            <h2>2. Dodaj Nową Szkołę</h2>
             
-            <div class="input-box">
-                <span class="small-label">Scramble</span>
-                <input type="number" id="mut_rate4" value="0.55" step="0.01">
+            <div class="input-grid">
+                <div>
+                    <label>ID (Auto):</label>
+                    <input type="number" id="new_id" value="1" readonly>
+                </div>
+                <div>
+                    <label>Zysk:</label>
+                    <input type="number" id="new_profit" value="10">
+                </div>
             </div>
+
+            <label>Lokalizacja (X, Y):</label>
+            <div class="input-grid">
+                <input type="number" id="new_x" placeholder="X (0-600)">
+                <input type="number" id="new_y" placeholder="Y (0-600)">
+            </div>
+
+            <label>Okno czasowe (Start - Koniec):</label>
+            <div class="input-grid">
+                <input type="time" id="new_tmin" value="08:00">
+                <input type="time" id="new_tmax" value="16:00">
+            </div>
+
+            <label>Czas serwisu (min):</label>
+            <input type="number" id="service_time" value="10">
+
+            <button class="btn-green" id="btn-dodaj">+ Dodaj szkołę do mapy</button>
 
         </div>
-        <button>Edycja szkół</button>
-        <button>Zatwierdź parametry</button>
+
+        <div class="card">
+            <h2>3. Usuń Szkołę</h2>
+
+            <label> Id szkoły do usuniecia</label>
+            <input type="number" id="id_delete">
+            <button class="btn-red" id="btn-usun">Usuń</button>
+        </div>
+
+        <div class="card" style="background-color: #e8f4fd;"> <h2>Szybki Generator</h2>
+            <label>Ilość szkół do wygenerowania</label>
+            <div class="input-grid" >
+                    <input type="number" id="num_generate">
+                    <button class="btn-blue" id="btn-random" style="margin-top:0;">⚡ Generuj losowo</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Aktualna lista szkół</h3>
+            <div class="scrollable-list">
+                <table id="tabela-szkol">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>X, Y</th>
+                            <th>Okno</th>
+                            <th>Zysk</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+            </div>
+        </div>
 
     </div>
 
+    <div class="right-panel">
+        <h2 style="border:none; margin-bottom:10px;">Podgląd Mapy (600x600)</h2>
+        <canvas id="mojapapa" width="600" height="600"></canvas>
+        <div id="licznik_szkol" style="margin-top:10px; font-weight:bold;">Liczba szkół: 0</div>
+    </div>
+
+    <div id="modalWykres" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="zamknijWykres()">&times;</span>
+            <h2 style="margin-top:0; text-align: center;">Postęp Ewolucji</h2>
+            <canvas id="wykresCanvas"></canvas>
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>
