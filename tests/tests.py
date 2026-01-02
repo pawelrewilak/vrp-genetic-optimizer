@@ -76,6 +76,13 @@ def main_benchmark(num_trials=1, output_file='benchmark_results.csv'):
     results = []
     convergence_logs = []
 
+    total_steps = num_trials*len(basic_configs + advanced_configs)*len(School_quantity)
+    current_step = 0
+
+    one_step_avg_time_sum = 0
+    one_step_avg_time = 0
+
+    print(f"Rozpoczynam benchmark. Łączna liczba testów do wykonania: {total_steps}")
     for graph in school_data_base:
         num_schools = len(graph.nodes) - 1
 
@@ -94,6 +101,7 @@ def main_benchmark(num_trials=1, output_file='benchmark_results.csv'):
                     cross_mode=config['crs']
                 )
 
+
                 duration = time.time() - start_time
                 
                 results.append({
@@ -109,8 +117,27 @@ def main_benchmark(num_trials=1, output_file='benchmark_results.csv'):
                     convergence_logs.append({
                         'size': num_schools,
                         'config': config['config_name'],
-                        'history': output['history_best'] # Lista 300 wartości
+                        'history': output['history_best']
                     })
+
+                current_step += 1
+                one_step_avg_time_sum += duration
+                
+                progress = (current_step / total_steps) * 100
+                avg_time_per_step = one_step_avg_time_sum / current_step
+                remaining_steps = total_steps - current_step
+                time_left_seconds = remaining_steps * avg_time_per_step
+                
+                eta_min = int(time_left_seconds // 60)
+                eta_sec = int(time_left_seconds % 60)
+
+                print(
+                    f"\rPostęp: {progress:.2f}% | "
+                    f"ETA: {eta_min}m {eta_sec}s | "
+                    f"Aktualnie: {config['config_name']} ({num_schools} szkół)   ", 
+                    end='', flush=True
+                )
+
 
     keys = results[0].keys()
     with open(output_file, 'w', newline='') as f:
