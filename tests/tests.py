@@ -79,6 +79,7 @@ def main_benchmark(num_trials=1, output_file='benchmark_results.csv'):
     total_steps = num_trials*len(basic_configs + advanced_configs)*len(School_quantity)
     current_step = 0
 
+    test_start_time = time.time()
     one_step_avg_time_sum = 0
     one_step_avg_time = 0
 
@@ -139,7 +140,12 @@ def main_benchmark(num_trials=1, output_file='benchmark_results.csv'):
                 )
 
     print(f"\rPostęp: 100.00% | ETA: 0m 0s | ", end="", flush=True)
+    total_duration = time.time() - test_start_time
+    et_min = int(total_duration // 60)
+    et_sec = int(total_duration % 60)
+    print(f"Testy zakończone sukcesem w czasie: {et_min}m {et_sec}s")
     print()
+
     results_dir = 'tests_results' 
 
     if not os.path.exists(results_dir):
