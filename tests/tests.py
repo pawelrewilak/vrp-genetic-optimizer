@@ -24,7 +24,7 @@ def generate_random_instance(num_schools: int, map_size: int = 600, seed: int = 
         x = random.randint(10, map_size - 10)
         y = random.randint(10, map_size - 10)
 
-        profit = random.randint(50, 500)
+        profit = random.randint(300, 1000)
         t_start = random.randint(0, 300)
         duration = random.randint(60, 240)
         t_end = min(t_start + duration, 480)
@@ -124,6 +124,6 @@ def main_benchmark(num_trials=1, output_file='benchmark_results.csv'):
         json.dump(convergence_logs, f)
     
     print(f"Dane zbieżności zapisano w convergence_data.json")
-    
+
 if __name__ == '__main__':
     main_benchmark(30)

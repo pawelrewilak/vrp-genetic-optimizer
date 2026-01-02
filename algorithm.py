@@ -361,7 +361,7 @@ def run_evolution(graph: Graph, pop_size: int = 60, generations: int = 200,
             best_global_fitness = best_local_fitness
             best_fitness_graph_y.append(best_local_fitness)
             best_global_chromosome = best_local_chromosome[:] 
-            print(f"Generacja {gen}: Rekord = {best_global_fitness:.2f}")
+            #print(f"Generacja {gen}: Rekord = {best_global_fitness:.2f}")
         
         else:
             best_fitness_graph_y.append(best_fitness_graph_y[-1])

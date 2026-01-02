@@ -216,21 +216,26 @@ if (btnRandom) {
             let x = losujLiczbe(10, MAX_WSPOLRZEDNA - 10); 
             let y = losujLiczbe(10, MAX_WSPOLRZEDNA - 10);
             
-            let profit = losujLiczbe(100, 500);
+            let profit = losujLiczbe(300,1000);
 
             let tmin = losujLiczbe(0, 300); 
-            let tmax = tmin + losujLiczbe(60, 180); 
+            let tmax = tmin + losujLiczbe(60, 240); 
             if (tmax > 480) tmax = 480;
 
             let tminStr = minutyNaGodzine(tmin);
             let tmaxStr = minutyNaGodzine(tmax);
+
+            let service_time_factor = Math.random() * (0.4 - 0.2) + 0.2;
+            let actual_duration = tmax - tmin;
+            let service_time = Math.floor(actual_duration * service_time_factor);
+
 
             let nowaSzkola = {
                 id: startId + i,
                 x: x,
                 y: y,
                 profit: profit,
-                service_time: 20, 
+                service_time: service_time, 
                 time_window_start: tmin,
                 time_window_end: tmax,
                 display_time: [tminStr, tmaxStr]
