@@ -49,19 +49,19 @@ class Graph:
 
 
 def calculate_fitness(routes: List[List[int]], graph: Graph) -> float:
-
     total_profit = 0.0
-    total_visit_costs = 0.0
     total_hiring_cost = 0.0
-    total_travel_cost = 0.0
-    
+    total_variable_costs = 0.0
     total_penalty = 0.0 
-    COST_PER_UNIT = 0.83
+    
+    LABOR_COST_PER_MIN = 2.50
+    FUEL_COST_PER_MIN = 0.83
+    TOTAL_RATE_PER_MIN = LABOR_COST_PER_MIN + FUEL_COST_PER_MIN # 3.33 zł/min
 
     for route in routes:
         if not route:
             continue
-            
+       
         total_hiring_cost += graph.vehicle_hiring_cost
         
         current_node_id = graph.depot_id
@@ -69,37 +69,37 @@ def calculate_fitness(routes: List[List[int]], graph: Graph) -> float:
         
         for next_node_id in route:
             school = graph.nodes_dict[next_node_id]
-            
             travel_time = graph.get_travel_time(current_node_id, next_node_id)
-            total_travel_cost += travel_time * COST_PER_UNIT
             
             arrival_time = current_time + travel_time
             start_service_time = max(arrival_time, school.time_window_start)
             
             if start_service_time > school.time_window_end:
                 lateness = start_service_time - school.time_window_end
-                total_penalty += lateness * graph.penalty_factor
+                if lateness <= 5:
+                    total_penalty += lateness * (graph.penalty_factor / 100) # 10 zł/min
+                elif lateness <= 15:
+                    total_penalty += (5 * 10) + (lateness - 5) * (graph.penalty_factor / 40) # 25 zł/min
+                else:
+                    total_penalty += (5 * 10) + (10 * 25) + (lateness - 15) * graph.penalty_factor # 1000 zł/min
             
             finish_time = start_service_time + school.service_time
-            
             current_time = finish_time
             current_node_id = next_node_id
-            
             total_profit += school.profit
-            total_visit_costs += school.visit_cost
             
+        # Powrót do bazy
         return_time = graph.get_travel_time(current_node_id, graph.depot_id)
-        
-        total_travel_cost += return_time * COST_PER_UNIT
-        
         end_of_day_time = current_time + return_time
+        
+        total_variable_costs += end_of_day_time * TOTAL_RATE_PER_MIN
         
         if end_of_day_time > graph.max_vehicle_time:
             overtime = end_of_day_time - graph.max_vehicle_time
-            total_penalty += overtime * graph.penalty_factor / 250
+            total_penalty += overtime * (LABOR_COST_PER_MIN * 2)
 
-    fitness = total_profit - (total_visit_costs + total_hiring_cost + total_travel_cost + total_penalty)
-    
+    # Ostateczny wynik w PLN
+    fitness = total_profit - (total_hiring_cost + total_variable_costs + total_penalty)
     return fitness
 
 def decode_chromosome(chromosome: List[int], graph: Graph) -> List[List[int]]:
@@ -148,28 +148,35 @@ def decode_chromosome(chromosome: List[int], graph: Graph) -> List[List[int]]:
         candidate_routes.append(current_route)
     
     final_routes = []
-    COST_PER_UNIT = 0.83
+    LABOR_COST_PER_MIN = 2.50 # 5 osobowa ekipa, stawka 30zl/h
+    FUEL_COST_PER_MIN = 0.83
+    TOTAL_RATE_PER_MIN = LABOR_COST_PER_MIN + FUEL_COST_PER_MIN # 3.33 zł/min
     
     for route in candidate_routes:
         if not route:
             continue
             
+        # 1. Zysk z trasy
         route_profit = sum(graph.nodes_dict[s_id].profit for s_id in route)
         
-        route_travel_cost = 0.0
-        route_visit_costs = 0.0
+        # 2. Koszty stałe i wizyt
+        route_visit_costs = sum(graph.nodes_dict[s_id].visit_cost for s_id in route)
         
+        # 3. Koszty czasu (Dojazd + Serwis)
+        route_travel_time = 0.0
         curr = graph.depot_id
         for s_id in route:
-            dist = graph.get_travel_time(curr, s_id)
-            route_travel_cost += dist * COST_PER_UNIT
-            route_visit_costs += graph.nodes_dict[s_id].visit_cost
+            route_travel_time += graph.get_travel_time(curr, s_id)
             curr = s_id
-            
-        dist_home = graph.get_travel_time(curr, graph.depot_id)
-        route_travel_cost += dist_home * COST_PER_UNIT
+        route_travel_time += graph.get_travel_time(curr, graph.depot_id) # Powrót
         
-        total_route_cost = graph.vehicle_hiring_cost + route_travel_cost + route_visit_costs
+        route_service_time = sum(graph.nodes_dict[s_id].service_time for s_id in route)
+        
+        # Łączny koszt czasu w trasie (identycznie jak w calculate_fitness)
+        total_time_cost = (route_travel_time + route_service_time) * TOTAL_RATE_PER_MIN
+        
+        # 4. Całkowity koszt trasy
+        total_route_cost = graph.vehicle_hiring_cost + total_time_cost + route_visit_costs
         
         if route_profit > total_route_cost:
             final_routes.append(route)
@@ -330,7 +337,7 @@ def mutator(chromosome: List[int], mode: str, mutation_rates: List[float] = [0.5
 
 def run_evolution(graph: Graph, pop_size: int = 60, generations: int = 200, 
                   mutation_mode: str = 'swap', 
-                  mut_rates: List[float] = [0.55, 0.55, 0.55, 0.55, 1], 
+                  mut_rates: List[float] = [0.15, 0.25, 0.10, 0.05, 1.0], 
                   cross_mode: str = 'order'):
     
     fitness_graph_y =[]
