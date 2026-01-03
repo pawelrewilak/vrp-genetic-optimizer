@@ -81,7 +81,8 @@ def main_benchmark(num_trials=1, output_file='benchmark_results.csv'):
 
     test_start_time = time.time()
     one_step_avg_time_sum = 0
-    one_step_avg_time = 0
+    recent_durations = [] # Lista do przechowywania ostatnich czasów
+    WINDOW_SIZE = 45
 
     print(f"Rozpoczynam benchmark. Łączna liczba testów do wykonania: {total_steps}")
     for graph in school_data_base:
@@ -104,6 +105,10 @@ def main_benchmark(num_trials=1, output_file='benchmark_results.csv'):
 
 
                 duration = time.time() - start_time
+                recent_durations.append(duration)
+
+                if len(recent_durations) > WINDOW_SIZE:
+                    recent_durations.pop(0)
                 
                 results.append({
                     'size': num_schools,
@@ -125,9 +130,10 @@ def main_benchmark(num_trials=1, output_file='benchmark_results.csv'):
                 one_step_avg_time_sum += duration
                 
                 progress = (current_step / total_steps) * 100
-                avg_time_per_step = one_step_avg_time_sum / current_step
+                avg_time_recent = sum(recent_durations) / len(recent_durations)
+
                 remaining_steps = total_steps - current_step
-                time_left_seconds = remaining_steps * avg_time_per_step
+                time_left_seconds = remaining_steps * avg_time_recent
                 
                 eta_min = int(time_left_seconds // 60)
                 eta_sec = int(time_left_seconds % 60)
