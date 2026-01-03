@@ -175,3 +175,9 @@ def main_benchmark(num_trials=1, output_file='benchmark_results.csv'):
 
 if __name__ == '__main__':
     main_benchmark(30)
+
+    # TESTY PRZEPROWADZONE 3.01.2026
+    # Rozpoczynam benchmark. Łączna liczba testów do wykonania: 1080
+    # Postęp: 100.00% | ETA: 0m 0s | Testy zakończone sukcesem w czasie: 51m 13s 
+    # Benchmark zakończony. Wyniki zapisano w: tests_results\benchmark_results.csv
+    # Dane zbieżności zapisano w: tests_results\convergence_data.json
