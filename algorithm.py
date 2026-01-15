@@ -355,7 +355,12 @@ def run_evolution(graph: Graph, pop_size: int = 60, generations: int = 200,
         scored_generation.sort(key=lambda x: x[1], reverse=True)
 
         best_local_chromosome, best_local_fitness = scored_generation[0]
-        fitness_graph_y.append(scored_generation[2][1])
+
+        current_fitnesses = [ind[1] for ind in scored_generation]
+        avg_fitness = sum(current_fitnesses) / len(current_fitnesses)
+        fitness_graph_y.append(avg_fitness)
+
+        #fitness_graph_y.append(scored_generation[5][1])
         
         if best_local_fitness > best_global_fitness:
             best_global_fitness = best_local_fitness
