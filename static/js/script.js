@@ -71,7 +71,7 @@ wykresInstancja = new Chart(ctxWykres, {
                 pointRadius: 0
             },
             {
-                label: 'Populacja',
+                label: 'Średnia populacji',
                 data: historia,
                 borderColor: '#007bff',
                 borderWidth: 1,
