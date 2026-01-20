@@ -48,17 +48,18 @@ class Graph:
 
 
 
-def calculate_fitness(routes: List[List[int]], graph: Graph) -> float:
+def calculate_fitness(routes: List[dict], graph: Graph) -> float:
     total_profit = 0.0
     total_hiring_cost = 0.0
-    total_variable_costs = 0.0
     total_penalty = 0.0 
     
     LABOR_COST_PER_MIN = 2.50
     FUEL_COST_PER_MIN = 0.83
     TOTAL_RATE_PER_MIN = LABOR_COST_PER_MIN + FUEL_COST_PER_MIN # 3.33 zł/min
 
-    for route in routes:
+    for route_data in routes:
+        if isinstance(route_data, dict):
+            route = route_data["path"]
         if not route:
             continue
        
@@ -71,8 +72,12 @@ def calculate_fitness(routes: List[List[int]], graph: Graph) -> float:
             school = graph.nodes_dict[next_node_id]
             travel_time = graph.get_travel_time(current_node_id, next_node_id)
             
+            total_hiring_cost += TOTAL_RATE_PER_MIN * travel_time
+            
             arrival_time = current_time + travel_time
             start_service_time = max(arrival_time, school.time_window_start)
+
+            total_hiring_cost += LABOR_COST_PER_MIN * school.service_time
             
             if start_service_time > school.time_window_end:
                 lateness = start_service_time - school.time_window_end
@@ -90,21 +95,22 @@ def calculate_fitness(routes: List[List[int]], graph: Graph) -> float:
             
         # Powrót do bazy
         return_time = graph.get_travel_time(current_node_id, graph.depot_id)
+        total_hiring_cost += TOTAL_RATE_PER_MIN * return_time
         end_of_day_time = current_time + return_time
-        
-        total_variable_costs += end_of_day_time * TOTAL_RATE_PER_MIN
         
         if end_of_day_time > graph.max_vehicle_time:
             overtime = end_of_day_time - graph.max_vehicle_time
             total_penalty += overtime * (LABOR_COST_PER_MIN * 2)
 
     # Ostateczny wynik w PLN
-    fitness = total_profit - (total_hiring_cost + total_variable_costs + total_penalty)
+    fitness = total_profit - (total_hiring_cost + total_penalty)
     return fitness
 
 def decode_chromosome(chromosome: List[int], graph: Graph) -> List[List[int]]:
-    
-    
+
+    LABOR_COST_PER_MIN = 2.50 # 5 osobowa ekipa, stawka 30zl/h
+    FUEL_COST_PER_MIN = 0.83
+    TOTAL_RATE_PER_MIN = LABOR_COST_PER_MIN + FUEL_COST_PER_MIN # 3.33 zł/min
     candidate_routes = []
     current_route = []
     current_time = 0.0
@@ -112,6 +118,10 @@ def decode_chromosome(chromosome: List[int], graph: Graph) -> List[List[int]]:
     
     for school_id in chromosome:
         school = graph.nodes_dict[school_id]
+        basic_cost = school.service_time * LABOR_COST_PER_MIN
+
+        if school.profit < basic_cost:
+            continue
         
         dist_to = graph.get_travel_time(current_node_id, school_id)
         dist_back = graph.get_travel_time(school_id, graph.depot_id)
@@ -148,9 +158,6 @@ def decode_chromosome(chromosome: List[int], graph: Graph) -> List[List[int]]:
         candidate_routes.append(current_route)
     
     final_routes = []
-    LABOR_COST_PER_MIN = 2.50 # 5 osobowa ekipa, stawka 30zl/h
-    FUEL_COST_PER_MIN = 0.83
-    TOTAL_RATE_PER_MIN = LABOR_COST_PER_MIN + FUEL_COST_PER_MIN # 3.33 zł/min
     
     for route in candidate_routes:
         if not route:
@@ -179,7 +186,13 @@ def decode_chromosome(chromosome: List[int], graph: Graph) -> List[List[int]]:
         total_route_cost = graph.vehicle_hiring_cost + total_time_cost + route_visit_costs
         
         if route_profit > total_route_cost:
-            final_routes.append(route)
+            route_data = {
+                "path": route,
+                "cost": total_route_cost,
+                "profit": route_profit
+            }
+            
+            final_routes.append(route_data)
 
     return final_routes
 
@@ -399,5 +412,6 @@ def run_evolution(graph: Graph, pop_size: int = 60, generations: int = 200,
         "best_fitness": best_global_fitness,
         "history": fitness_graph_y,
         "history_best": best_fitness_graph_y,
-        "routes": final_routes
+        "routes": final_routes,
+
     }

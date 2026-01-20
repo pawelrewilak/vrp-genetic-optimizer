@@ -18,13 +18,18 @@ rysujPunkt(300, 30, "red", 8);
 
 listaSzkol.forEach(s => rysujPunkt(s.x, s.y, "#007bff"));
 
-trasy.forEach((trasa, index) => {
+trasy.forEach((trasaObiekt, index) => {
     ctx.beginPath();
     ctx.lineWidth = 2;
     ctx.strokeStyle = KOLORY_TRAS[index % KOLORY_TRAS.length];
     let startX = 300; 
     let startY = ROZMIAR_CANVAS - 30;
     ctx.moveTo(startX, startY);
+
+    let trasa = Array.isArray(trasaObiekt) ? trasaObiekt : trasaObiekt.path; 
+
+    if (!trasa) return;
+
 
     trasa.forEach(idSzkoly => {
         if (idSzkoly === 0) {
@@ -130,6 +135,31 @@ function dodajWierszDoTabeli(szkola) {
     komorkaOkno.innerText = `${szkola.display_time[0]} - ${szkola.display_time[1]}`;
     const komorkaZysk = nowyWiersz.insertCell(3);
     komorkaZysk.innerText = szkola.profit;
+}
+
+function aktualizujTabeleTras(trasy) {
+    const tbody = document.getElementById('tabela-tras-body');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+
+    if (!trasy || trasy.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4">Brak tras</td></tr>';
+        return;
+    }
+
+    trasy.forEach((trasa, index) => {
+        const row = tbody.insertRow();
+        row.insertCell(0).innerText = index + 1;
+        
+        let opisTrasy = Array.isArray(trasa) ? trasa.join(' -> ') : trasa;
+        if (trasa.path) opisTrasy = trasa.path.join(' -> ');
+        
+        row.insertCell(1).innerText = opisTrasy;
+        row.insertCell(2).innerText = trasa.cost ? trasa.cost.toFixed(2) : "-";
+        row.insertCell(3).innerText = trasa.profit ? trasa.profit.toFixed(2) : "-";
+
+    });
 }
 
 console.log("Dashboard VRP Gotowy.");
@@ -345,6 +375,7 @@ btnZatwierdz.addEventListener('click', async function() {
         
         if (wynik.routes) {
             rysujTrasy(wynik.routes);
+            aktualizujTabeleTras(wynik.routes);
         }
 
         if (wynik.history && wynik.history_best) {
